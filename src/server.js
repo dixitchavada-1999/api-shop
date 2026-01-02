@@ -9,5 +9,5 @@ connectDB();
 
 app.listen(PORT, () => {
     console.log(`Mongo URL: ${process.env.MONGO_URI}`);
-    console.log(`Server running in 12 ${process.env.NODE_ENV} mode on port ${PORT}`);
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
