@@ -1,0 +1,41 @@
+{
+  "name": "jewelry-b2b-api",
+  "version": "1.0.0",
+  "description": "Jewelry B2B REST API with multi-tenant support",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jewelry",
+    "b2b",
+    "api",
+    "multi-tenant",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "expo-image-picker": "^17.0.10",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.2",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}
