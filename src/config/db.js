@@ -5,6 +5,8 @@ const connectDB = async () => {
         if (!process.env.MONGO_URI) {
             throw new Error("MONGO_URI not defined");
         }
+        console.log('MONGO_URI', process.env.MONGO_URI);
+        console.log('NODE_ENV', process.env.NODE_ENV);
 
         if (process.env.NODE_ENV === 'production' && (process.env.MONGO_URI.includes('localhost') || process.env.MONGO_URI.includes('127.0.0.1'))) {
             console.error("FATAL ERROR: You are trying to connect to a local MongoDB instance in production. Please set MONGO_URI in your Render Environment Variables to your MongoDB Atlas connection string.");
