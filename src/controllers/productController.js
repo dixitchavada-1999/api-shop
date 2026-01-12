@@ -53,7 +53,17 @@ const getProductById = async (req, res, next) => {
 // @access  Private/Admin
 const createProduct = async (req, res, next) => {
     try {
-        const { name, categoryId, designCode, description, metalType, imageUrl, imageUrls } = req.body;
+        // Parse JSON fields if they come as strings (common with multipart/form-data)
+        let { name, categoryId, designCode, description, metalType, imageUrl, imageUrls } = req.body;
+        
+        // Parse JSON strings if needed
+        if (typeof imageUrls === 'string') {
+            try {
+                imageUrls = JSON.parse(imageUrls);
+            } catch (e) {
+                imageUrls = undefined;
+            }
+        }
 
         // Validate required fields
         if (!name || !categoryId || !metalType) {
@@ -72,11 +82,25 @@ const createProduct = async (req, res, next) => {
             throw new Error('Category not found');
         }
 
-        // Handle both single imageUrl and multiple imageUrls
-        // If imageUrls array is provided, use it; otherwise use imageUrl if provided
-        const images = imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0
-            ? imageUrls
-            : imageUrl ? [imageUrl] : [];
+        // Handle uploaded files first (from multer)
+        let uploadedImageUrls = [];
+        if (req.files && req.files.length > 0) {
+            // For local storage, convert filename to URL path
+            uploadedImageUrls = req.files.map(file => `/uploads/${file.filename}`);
+        } else if (req.file) {
+            uploadedImageUrls = [`/uploads/${req.file.filename}`];
+        }
+
+        // Handle both uploaded files and URL strings
+        // Priority: uploaded files > imageUrls array > single imageUrl
+        let finalImageUrls = [];
+        if (uploadedImageUrls.length > 0) {
+            finalImageUrls = uploadedImageUrls;
+        } else if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
+            finalImageUrls = imageUrls;
+        } else if (imageUrl) {
+            finalImageUrls = [imageUrl];
+        }
 
         const product = await Product.create({
             tenantId: req.user.tenantId,
@@ -85,8 +109,8 @@ const createProduct = async (req, res, next) => {
             designCode,
             description,
             metalType,
-            imageUrl: imageUrl || (images.length > 0 ? images[0] : undefined), // Keep for backward compatibility
-            imageUrls: images,
+            imageUrl: finalImageUrls.length > 0 ? finalImageUrls[0] : undefined, // Keep for backward compatibility
+            imageUrls: finalImageUrls,
             isActive: true,
         });
 
@@ -132,22 +156,46 @@ const updateProduct = async (req, res, next) => {
             }
         }
 
+        // Parse JSON fields if they come as strings (common with multipart/form-data)
+        let { imageUrl, imageUrls } = req.body;
+        if (typeof imageUrls === 'string') {
+            try {
+                imageUrls = JSON.parse(imageUrls);
+            } catch (e) {
+                imageUrls = undefined;
+            }
+        }
+
         product.name = req.body.name || product.name;
         product.categoryId = req.body.categoryId || product.categoryId;
         product.designCode = req.body.designCode !== undefined ? req.body.designCode : product.designCode;
         product.description = req.body.description !== undefined ? req.body.description : product.description;
         product.metalType = req.body.metalType || product.metalType;
         
-        // Handle imageUrls array
-        if (req.body.imageUrls !== undefined && Array.isArray(req.body.imageUrls)) {
-            product.imageUrls = req.body.imageUrls;
-            // Also update imageUrl for backward compatibility (use first image)
-            product.imageUrl = req.body.imageUrls.length > 0 ? req.body.imageUrls[0] : undefined;
-        } else if (req.body.imageUrl !== undefined) {
-            // If single imageUrl is provided, convert to array
-            product.imageUrl = req.body.imageUrl;
-            product.imageUrls = req.body.imageUrl ? [req.body.imageUrl] : [];
+        // Handle uploaded files first (from multer)
+        let uploadedImageUrls = [];
+        if (req.files && req.files.length > 0) {
+            // For local storage, convert filename to URL path
+            uploadedImageUrls = req.files.map(file => `/uploads/${file.filename}`);
+        } else if (req.file) {
+            uploadedImageUrls = [`/uploads/${req.file.filename}`];
         }
+
+        // Handle image updates: uploaded files > imageUrls array > single imageUrl
+        if (uploadedImageUrls.length > 0) {
+            // If files were uploaded, use them
+            product.imageUrls = uploadedImageUrls;
+            product.imageUrl = uploadedImageUrls[0];
+        } else if (imageUrls !== undefined && Array.isArray(imageUrls)) {
+            // If imageUrls array is provided, use it
+            product.imageUrls = imageUrls;
+            product.imageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
+        } else if (imageUrl !== undefined) {
+            // If single imageUrl is provided, convert to array
+            product.imageUrl = imageUrl;
+            product.imageUrls = imageUrl ? [imageUrl] : [];
+        }
+        // If none provided, keep existing images
         
         product.isActive = req.body.isActive !== undefined ? req.body.isActive : product.isActive;
 

@@ -8,6 +8,18 @@ const {
     updateProduct,
     deleteProduct,
 } = require('../controllers/productController');
+const { uploadMultiple } = require('../controllers/uploadController');
+
+// Wrapper to handle multer errors
+const handleMulterUpload = (req, res, next) => {
+    uploadMultiple(req, res, (err) => {
+        if (err) {
+            // Multer errors will be caught by error handler
+            return next(err);
+        }
+        next();
+    });
+};
 
 // @route   GET /api/products
 // @desc    Get all products
@@ -20,14 +32,16 @@ router.get('/', protect, getProducts);
 router.get('/:id', protect, getProductById);
 
 // @route   POST /api/products
-// @desc    Create product
+// @desc    Create product (supports both file uploads and URL strings)
 // @access  Private/Admin
-router.post('/', protect, admin, createProduct);
+// @note    Can send images as files (field name: "images") or as URLs in body (imageUrl/imageUrls)
+router.post('/', protect, admin, handleMulterUpload, createProduct);
 
 // @route   PUT /api/products/:id
-// @desc    Update product
+// @desc    Update product (supports both file uploads and URL strings)
 // @access  Private/Admin
-router.put('/:id', protect, admin, updateProduct);
+// @note    Can send images as files (field name: "images") or as URLs in body (imageUrl/imageUrls)
+router.put('/:id', protect, admin, handleMulterUpload, updateProduct);
 
 // @route   DELETE /api/products/:id
 // @desc    Delete product

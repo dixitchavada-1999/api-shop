@@ -9,7 +9,9 @@ const connectDB = async () => {
         console.log('NODE_ENV', process.env.NODE_ENV);
 
         if (process.env.NODE_ENV === 'production' && (process.env.MONGO_URI.includes('localhost') || process.env.MONGO_URI.includes('127.0.0.1'))) {
-            console.error("FATAL ERROR: You are trying to connect to a local MongoDB instance in production. Please set MONGO_URI in your Render Environment Variables to your MongoDB Atlas connection string.");
+            console.error("FATAL ERROR: You are trying to connect to a local MongoDB instance in production.");
+            console.error("Please set MONGO_URI in your Railway/Render Environment Variables to your MongoDB Atlas connection string.");
+            console.error("Example: mongodb+srv://username:password@cluster.mongodb.net/database");
             process.exit(1);
         }
 
