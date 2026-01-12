@@ -1,4 +1,8 @@
-require('dotenv').config();
+// Load environment variables (only in development - Railway uses its own env vars)
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+}
+
 const app = require('./app');
 const connectDB = require('./config/db');
 
