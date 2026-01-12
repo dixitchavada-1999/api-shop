@@ -66,12 +66,30 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    const mongoose = require('mongoose');
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    
+    res.status(dbStatus === 'connected' ? 200 : 503).json({
+        success: dbStatus === 'connected',
+        message: dbStatus === 'connected' ? 'API is healthy' : 'API is running but database is disconnected',
+        version: '1.0.0',
+        database: dbStatus,
+        timestamp: new Date().toISOString(),
+    });
+});
+
 // Basic route
 app.get('/', (req, res) => {
+    const mongoose = require('mongoose');
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    
     res.json({
         success: true,
         message: 'Jewelry B2B API is running',
         version: '1.0.0',
+        database: dbStatus,
         endpoints: {
             auth: '/api/auth',
             categories: '/api/categories',
@@ -80,6 +98,7 @@ app.get('/', (req, res) => {
             customers: '/api/customers',
             orders: '/api/orders',
             dashboard: '/api/dashboard',
+            health: '/health',
         },
     });
 });

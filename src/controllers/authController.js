@@ -36,6 +36,16 @@ const registerAdmin = async (req, res, next) => {
             deviceId 
         } = req.body;
 
+        // Check database connection first
+        if (mongoose.connection.readyState !== 1) {
+            return res.status(503).json({
+                success: false,
+                message: 'Database connection unavailable. Please check server configuration.',
+                data: null,
+                errors: [],
+            });
+        }
+
         // Validate input - accept either name OR firstName+lastName
         if (!email || !password) {
             return res.status(400).json({
@@ -50,6 +60,27 @@ const registerAdmin = async (req, res, next) => {
             return res.status(400).json({
                 success: false,
                 message: 'Please provide name or firstName and lastName',
+                data: null,
+                errors: [],
+            });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide a valid email address',
+                data: null,
+                errors: [],
+            });
+        }
+
+        // Validate password strength
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters long',
                 data: null,
                 errors: [],
             });
@@ -110,6 +141,42 @@ const registerAdmin = async (req, res, next) => {
         }
     } catch (error) {
         console.error('Registration error:', error);
+        
+        // Handle MongoDB duplicate key errors
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            return res.status(400).json({
+                success: false,
+                message: `${field} already exists`,
+                data: null,
+                errors: [],
+            });
+        }
+
+        // Handle validation errors
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map(err => ({
+                msg: err.message,
+                param: err.path,
+            }));
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                data: null,
+                errors: errors,
+            });
+        }
+
+        // Handle database connection errors
+        if (error.name === 'MongoServerError' || error.message.includes('Mongo')) {
+            return res.status(503).json({
+                success: false,
+                message: 'Database connection error. Please try again later.',
+                data: null,
+                errors: [],
+            });
+        }
+
         return res.status(500).json({
             success: false,
             message: error.message || 'Registration failed',

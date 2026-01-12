@@ -23,15 +23,36 @@ const connectDB = async () => {
             console.error("FATAL ERROR: You are trying to connect to a local MongoDB instance in production.");
             console.error("Please set MONGO_URI in your Railway/Render Environment Variables to your MongoDB Atlas connection string.");
             console.error("Example: mongodb+srv://username:password@cluster.mongodb.net/database");
-            process.exit(1);
+            throw new Error("Invalid MONGO_URI for production environment");
         }
 
-        await mongoose.connect(process.env.MONGO_URI);
+        const connectionOptions = {
+            serverSelectionTimeoutMS: 10000, // 10 seconds timeout
+            socketTimeoutMS: 45000, // 45 seconds socket timeout
+        };
 
-        console.log("MongoDB Connected");
+        await mongoose.connect(process.env.MONGO_URI, connectionOptions);
+
+        console.log("✅ MongoDB Connected Successfully");
+        
+        // Handle connection events
+        mongoose.connection.on('error', (err) => {
+            console.error('❌ MongoDB connection error:', err.message);
+        });
+
+        mongoose.connection.on('disconnected', () => {
+            console.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+        });
+
+        mongoose.connection.on('reconnected', () => {
+            console.log('✅ MongoDB reconnected');
+        });
     } catch (err) {
-        console.error(err.message);
-        process.exit(1);
+        console.error('❌ MongoDB connection failed:', err.message);
+        console.error('⚠️ Server will continue to run, but database operations will fail.');
+        console.error('⚠️ Please check your MONGO_URI and MongoDB Atlas network settings.');
+        // Don't exit - let the server start and return errors via API
+        // This prevents 502 errors and allows health checks to work
     }
 };
 

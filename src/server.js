@@ -8,8 +8,11 @@ const connectDB = require('./config/db');
 
 const PORT = process.env.PORT || 3000;
 
-// Connect to Database
-connectDB();
+// Connect to Database (non-blocking)
+connectDB().catch(err => {
+    console.error('⚠️ Database connection failed, but server will continue to run');
+    console.error('⚠️ API endpoints will return 503 errors until database is connected');
+});
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
@@ -19,6 +22,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     if (process.env.NODE_ENV === 'development') {
         console.log(`📍 Local URL: http://localhost:${PORT}`);
     }
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
 });
 
 // Handle unhandled promise rejections
